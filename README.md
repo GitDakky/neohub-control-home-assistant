@@ -163,19 +163,9 @@ https://github.com/GitDakky/neohub-control-home-assistant
 
 Install and start the official Mosquitto broker add-on, then make sure the MQTT integration is enabled in Home Assistant.
 
-Default broker settings expected by this add-on:
+From `0.2.0`, NeoHub Control consumes Home Assistant Supervisor's `mqtt:need` service credentials automatically. Leave the MQTT username/password blank unless you intentionally use an external broker. This fixes the common failure where Mosquitto rejects anonymous add-on clients and no discovery entities appear.
 
-```yaml
-mqtt:
-  host: core-mosquitto
-  port: 1883
-  username: ""
-  password: ""
-```
-
-If your broker requires credentials, set them in the add-on options.
-
-### 3. Configure NeoHub credentials
+### 3. Configure NeoHub credentials and building mapping
 
 ```yaml
 username: your-neohub-email@example.com
@@ -184,19 +174,41 @@ url: https://neohub.co.uk/
 poll_interval: 60
 discovery_prefix: homeassistant
 base_topic: neohub
+property_name: Longueville Hall
+
+# Assign each physical hub to a building/property zone.
+hub_zones:
+  - hub_name: Gate House
+    zone: Gate House
+  - hub_name: 2nd Floor
+    zone: Upper Floor
+
+# Assign thermostat points to rooms. `zone` can override the hub zone.
+room_mappings:
+  - hub_name: Gate House
+    thermostat: Kitchen
+    room: Kitchen
+    zone: Gate House
+  - hub_name: 2nd Floor
+    thermostat: G Ensuite
+    room: Green Ensuite
+    zone: Upper Floor
+
 mqtt:
-  host: core-mosquitto
+  host: ""
   port: 1883
   username: ""
   password: ""
+  ssl: false
 ```
 
 Start the add-on. Within one poll cycle, Home Assistant should discover entities like:
 
 ```text
-climate.neohub_main_hub_kitchen_ufh
-climate.neohub_main_hub_lounge
-switch.neohub_main_hub_garden_socket
+climate.neohub_main_hub_kitchen_ufh_hub_1
+sensor.neohub_main_hub_kitchen_ufh_hub_1_floor_temperature
+binary_sensor.neohub_main_hub_kitchen_ufh_hub_1_window_open
+switch.neohub_main_hub_garden_socket_hub_1
 ```
 
 ---
@@ -223,6 +235,8 @@ The premium dashboard auto-discovers entities matching:
 ```text
 climate.neohub_*
 switch.neohub_*
+sensor.neohub_*
+binary_sensor.neohub_*
 ```
 
 ### Basic dashboard
@@ -239,35 +253,37 @@ Edit the example entity IDs to match your actual discovered entities.
 
 ## MQTT topic model
 
-For a hub called `Main Hub` and a zone called `Kitchen UFH`, the bridge creates an object ID like:
+For a hub called `Main Hub`, hub ID `hub-1`, and a zone called `Kitchen UFH`, the bridge creates an object ID like:
 
 ```text
-neohub_main_hub_kitchen_ufh
+neohub_main_hub_kitchen_ufh_hub_1
 ```
 
 Discovery:
 
 ```text
-homeassistant/climate/neohub_main_hub_kitchen_ufh/config
+homeassistant/climate/neohub_main_hub_kitchen_ufh_hub_1/config
 ```
 
 State:
 
 ```text
-neohub/neohub_main_hub_kitchen_ufh/availability
-neohub/neohub_main_hub_kitchen_ufh/current_temperature
-neohub/neohub_main_hub_kitchen_ufh/target_temperature
-neohub/neohub_main_hub_kitchen_ufh/mode
-neohub/neohub_main_hub_kitchen_ufh/action
-neohub/neohub_main_hub_kitchen_ufh/humidity
-neohub/neohub_main_hub_kitchen_ufh/attributes
+neohub/neohub_main_hub_kitchen_ufh_hub_1/availability
+neohub/neohub_main_hub_kitchen_ufh_hub_1/current_temperature
+neohub/neohub_main_hub_kitchen_ufh_hub_1/target_temperature
+neohub/neohub_main_hub_kitchen_ufh_hub_1/mode
+neohub/neohub_main_hub_kitchen_ufh_hub_1/action
+neohub/neohub_main_hub_kitchen_ufh_hub_1/humidity
+neohub/neohub_main_hub_kitchen_ufh_hub_1/floor_temperature
+neohub/neohub_main_hub_kitchen_ufh_hub_1/modulation_level
+neohub/neohub_main_hub_kitchen_ufh_hub_1/attributes
 ```
 
 Commands:
 
 ```text
-neohub/neohub_main_hub_kitchen_ufh/set_temperature
-neohub/neohub_main_hub_kitchen_ufh/set_mode
+neohub/neohub_main_hub_kitchen_ufh_hub_1/set_temperature
+neohub/neohub_main_hub_kitchen_ufh_hub_1/set_mode
 ```
 
 ---
