@@ -1,0 +1,7 @@
+requests>=2.25.0
+paho-mqtt>=1.6.1
+
+# Development / validation
+pytest>=7.0.0
+ruff>=0.1.0
+PyYAML>=6.0.0
